@@ -19,17 +19,7 @@
  *
  ******************************************************************************/
 
-
-MentorRevival
-=============
-
-This project was part of a University of Canterbury 4th year electrical engineering project aiming to revive mentor robot arms with a modern interface.
-
-Schematics will be released at a later date.
-
-LICENSE
-=======
-
-This project is licensed under the GNU General Public License (GPL) version 3.
-
-See COPYING.GPL3.txt for more details. 
+int main(void)
+{
+	return 1;
+}

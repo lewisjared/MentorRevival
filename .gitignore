@@ -1,17 +1,6 @@
-# Object files
-*.o
+# Ignore eclipse project files
+.cproject
+.project
+.dep
+build
 
-# Libraries
-*.lib
-*.a
-
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
-
-# Executables
-*.exe
-*.out
-*.app
