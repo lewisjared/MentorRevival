@@ -1,86 +1,112 @@
 /*
-    ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011,2012 Giovanni Di Sirio.
+    ChibiOS/RT - Copyright (C) 2006-2013 Giovanni Di Sirio
 
-    This file is part of ChibiOS/RT.
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
-    ChibiOS/RT is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
+        http://www.apache.org/licenses/LICENSE-2.0
 
-    ChibiOS/RT is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-                                      ---
-
-    A special exception to the GPL can be applied should you wish to distribute
-    a combined work that includes ChibiOS/RT, without being obliged to provide
-    the source code for any proprietary components. See the file exception.txt
-    for full details of how and when the exception can be applied.
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
 */
 
 #include "ch.h"
 #include "hal.h"
-#include "test.h"
-#include "lis302dl.h"
+
 #include "chprintf.h"
+#include "shell.h"
+#include "lis302dl.h"
 
-static void pwmpcb(PWMDriver *pwmp);
-static void adccb(ADCDriver *adcp, adcsample_t *buffer, size_t n);
-static void spicb(SPIDriver *spip);
+#include "usbcfg.h"
 
-/* Total number of channels to be sampled by a single ADC operation.*/
-#define ADC_GRP1_NUM_CHANNELS   2
+/* Virtual serial port over USB.*/
+static SerialUSBDriver SDU1;
 
-/* Depth of the conversion buffer, channels are sampled four times each.*/
-#define ADC_GRP1_BUF_DEPTH      4
+/*===========================================================================*/
+/* Command line related.                                                     */
+/*===========================================================================*/
 
-/*
- * ADC samples buffer.
- */
-static adcsample_t samples[ADC_GRP1_NUM_CHANNELS * ADC_GRP1_BUF_DEPTH];
+#define SHELL_WA_SIZE   THD_WA_SIZE(2048)
+#define TEST_WA_SIZE    THD_WA_SIZE(256)
 
-/*
- * ADC conversion group.
- * Mode:        Linear buffer, 4 samples of 2 channels, SW triggered.
- * Channels:    IN11   (48 cycles sample time)
- *              Sensor (192 cycles sample time)
- */
-static const ADCConversionGroup adcgrpcfg = {
-  FALSE,
-  ADC_GRP1_NUM_CHANNELS,
-  adccb,
-  NULL,
-  /* HW dependent part.*/
-  0,
-  ADC_CR2_SWSTART,
-  ADC_SMPR1_SMP_AN11(ADC_SAMPLE_56) | ADC_SMPR1_SMP_SENSOR(ADC_SAMPLE_144),
-  0,
-  ADC_SQR1_NUM_CH(ADC_GRP1_NUM_CHANNELS),
-  0,
-  ADC_SQR3_SQ2_N(ADC_CHANNEL_IN11) | ADC_SQR3_SQ1_N(ADC_CHANNEL_SENSOR)
+static void cmd_mem(BaseSequentialStream *chp, int argc, char *argv[]) {
+  size_t n, size;
+
+  (void)argv;
+  if (argc > 0) {
+    chprintf(chp, "Usage: mem\r\n");
+    return;
+  }
+  n = chHeapStatus(NULL, &size);
+  chprintf(chp, "core free memory : %u bytes\r\n", chCoreStatus());
+  chprintf(chp, "heap fragments   : %u\r\n", n);
+  chprintf(chp, "heap free total  : %u bytes\r\n", size);
+}
+
+static void cmd_threads(BaseSequentialStream *chp, int argc, char *argv[]) {
+  static const char *states[] = {THD_STATE_NAMES};
+  Thread *tp;
+
+  (void)argv;
+  if (argc > 0) {
+    chprintf(chp, "Usage: threads\r\n");
+    return;
+  }
+  chprintf(chp, "    addr    stack prio refs     state time\r\n");
+  tp = chRegFirstThread();
+  do {
+    chprintf(chp, "%.8lx %.8lx %4lu %4lu %9s %lu\r\n",
+            (uint32_t)tp, (uint32_t)tp->p_ctx.r13,
+            (uint32_t)tp->p_prio, (uint32_t)(tp->p_refs - 1),
+            states[tp->p_state], (uint32_t)tp->p_time);
+    tp = chRegNextThread(tp);
+  } while (tp != NULL);
+}
+
+static void cmd_test(BaseSequentialStream *chp, int argc, char *argv[]) {
+  Thread *tp;
+
+  (void)argv;
+  if (argc > 0) {
+    chprintf(chp, "Usage: test\r\n");
+    return;
+  }
+}
+
+static const ShellCommand commands[] = {
+  {"mem", cmd_mem},
+  {"threads", cmd_threads},
+  {"test", cmd_test},
+  {NULL, NULL}
 };
+
+static const ShellConfig shell_cfg1 = {
+  (BaseSequentialStream *)&SDU1,
+  commands
+};
+
+/*===========================================================================*/
+/* Accelerometer related.                                                    */
+/*===========================================================================*/
 
 /*
  * PWM configuration structure.
  * Cyclic callback enabled, channels 1 and 4 enabled without callbacks,
  * the active state is a logic one.
  */
-static PWMConfig pwmcfg = {
-  10000,                                    /* 10kHz PWM clock frequency.   */
-  10000,                                    /* PWM period 1S (in ticks).    */
-  pwmpcb,
+static const PWMConfig pwmcfg = {
+  100000,                                   /* 100kHz PWM clock frequency.  */
+  128,                                      /* PWM period is 128 cycles.    */
+  NULL,
   {
-    {PWM_OUTPUT_ACTIVE_HIGH, NULL},
-    {PWM_OUTPUT_DISABLED, NULL},
-    {PWM_OUTPUT_DISABLED, NULL},
-    {PWM_OUTPUT_ACTIVE_HIGH, NULL}
+   {PWM_OUTPUT_ACTIVE_HIGH, NULL},
+   {PWM_OUTPUT_ACTIVE_HIGH, NULL},
+   {PWM_OUTPUT_ACTIVE_HIGH, NULL},
+   {PWM_OUTPUT_ACTIVE_HIGH, NULL}
   },
   /* HW dependent part.*/
   0
@@ -101,97 +127,94 @@ static const SPIConfig spi1cfg = {
 
 /*
  * SPI2 configuration structure.
- * Speed 21MHz, CPHA=0, CPOL=0, 16bits frames, MSb transmitted first.
+ * Speed 21MHz, CPHA=0, CPOL=0, 8bits frames, MSb transmitted first.
  * The slave select line is the pin 12 on the port GPIOA.
  */
 static const SPIConfig spi2cfg = {
-  spicb,
+  NULL,
   /* HW dependent part.*/
   GPIOB,
   12,
-  SPI_CR1_DFF
+  0
 };
 
 /*
- * PWM cyclic callback.
- * A new ADC conversion is started.
- */
-static void pwmpcb(PWMDriver *pwmp) {
-
-  (void)pwmp;
-
-  /* Starts an asynchronous ADC conversion operation, the conversion
-     will be executed in parallel to the current PWM cycle and will
-     terminate before the next PWM cycle.*/
-  chSysLockFromIsr();
-  adcStartConversionI(&ADCD1, &adcgrpcfg, samples, ADC_GRP1_BUF_DEPTH);
-  chSysUnlockFromIsr();
-}
-
-/*
- * ADC end conversion callback.
- * The PWM channels are reprogrammed using the latest ADC samples.
- * The latest samples are transmitted into a single SPI transaction.
- */
-void adccb(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
-
-  (void) buffer; (void) n;
-  /* Note, only in the ADC_COMPLETE state because the ADC driver fires an
-     intermediate callback when the buffer is half full.*/
-  if (adcp->state == ADC_COMPLETE) {
-    adcsample_t avg_ch1, avg_ch2;
-
-    /* Calculates the average values from the ADC samples.*/
-    avg_ch1 = (samples[0] + samples[2] + samples[4] + samples[6]) / 4;
-    avg_ch2 = (samples[1] + samples[3] + samples[5] + samples[7]) / 4;
-
-    chSysLockFromIsr();
-
-    /* Changes the channels pulse width, the change will be effective
-       starting from the next cycle.*/
-    pwmEnableChannelI(&PWMD4, 0, PWM_FRACTION_TO_WIDTH(&PWMD4, 4096, avg_ch1));
-    pwmEnableChannelI(&PWMD4, 3, PWM_FRACTION_TO_WIDTH(&PWMD4, 4096, avg_ch2));
-
-    /* SPI slave selection and transmission start.*/
-    spiSelectI(&SPID2);
-    spiStartSendI(&SPID2, ADC_GRP1_NUM_CHANNELS * ADC_GRP1_BUF_DEPTH, samples);
-
-    chSysUnlockFromIsr();
-  }
-}
-
-/*
- * SPI end transfer callback.
- */
-static void spicb(SPIDriver *spip) {
-
-  /* On transfer end just releases the slave select line.*/
-  chSysLockFromIsr();
-  spiUnselectI(spip);
-  chSysUnlockFromIsr();
-}
-
-/*
- * This is a periodic thread that does absolutely nothing except flashing
- * a LED.
+ * This is a periodic thread that reads accelerometer and outputs
+ * result to SPI2 and PWM.
  */
 static WORKING_AREA(waThread1, 128);
 static msg_t Thread1(void *arg) {
+  static int8_t xbuf[4], ybuf[4];   /* Last accelerometer data.*/
+  systime_t time;                   /* Next deadline.*/
 
   (void)arg;
-  chRegSetThreadName("blinker");
+  chRegSetThreadName("reader");
+
+  /* LIS302DL initialization.*/
+  lis302dlWriteRegister(&SPID1, LIS302DL_CTRL_REG1, 0x43);
+  lis302dlWriteRegister(&SPID1, LIS302DL_CTRL_REG2, 0x00);
+  lis302dlWriteRegister(&SPID1, LIS302DL_CTRL_REG3, 0x00);
+
+  /* Reader thread loop.*/
+  time = chTimeNow();
   while (TRUE) {
-    palSetPad(GPIOD, GPIOD_LED3);       /* Orange.  */
-    chThdSleepMilliseconds(500);
-    palClearPad(GPIOD, GPIOD_LED3);     /* Orange.  */
-    chThdSleepMilliseconds(500);
+    int32_t x, y;
+    unsigned i;
+
+    /* Keeping an history of the latest four accelerometer readings.*/
+    for (i = 3; i > 0; i--) {
+      xbuf[i] = xbuf[i - 1];
+      ybuf[i] = ybuf[i - 1];
+    }
+
+    /* Reading MEMS accelerometer X and Y registers.*/
+    xbuf[0] = (int8_t)lis302dlReadRegister(&SPID1, LIS302DL_OUTX);
+    ybuf[0] = (int8_t)lis302dlReadRegister(&SPID1, LIS302DL_OUTY);
+
+    /* Transmitting accelerometer the data over SPI2.*/
+    spiSelect(&SPID2);
+    spiSend(&SPID2, 4, xbuf);
+    spiSend(&SPID2, 4, ybuf);
+    spiUnselect(&SPID2);
+
+    /* Calculating average of the latest four accelerometer readings.*/
+    x = ((int32_t)xbuf[0] + (int32_t)xbuf[1] +
+         (int32_t)xbuf[2] + (int32_t)xbuf[3]) / 4;
+    y = ((int32_t)ybuf[0] + (int32_t)ybuf[1] +
+         (int32_t)ybuf[2] + (int32_t)ybuf[3]) / 4;
+
+    /* Reprogramming the four PWM channels using the accelerometer data.*/
+    if (y < 0) {
+      pwmEnableChannel(&PWMD4, 0, (pwmcnt_t)-y);
+      pwmEnableChannel(&PWMD4, 2, (pwmcnt_t)0);
+    }
+    else {
+      pwmEnableChannel(&PWMD4, 2, (pwmcnt_t)y);
+      pwmEnableChannel(&PWMD4, 0, (pwmcnt_t)0);
+    }
+    if (x < 0) {
+      pwmEnableChannel(&PWMD4, 1, (pwmcnt_t)-x);
+      pwmEnableChannel(&PWMD4, 3, (pwmcnt_t)0);
+    }
+    else {
+      pwmEnableChannel(&PWMD4, 3, (pwmcnt_t)x);
+      pwmEnableChannel(&PWMD4, 1, (pwmcnt_t)0);
+    }
+
+    /* Waiting until the next 250 milliseconds time interval.*/
+    chThdSleepUntil(time += MS2ST(100));
   }
 }
+
+/*===========================================================================*/
+/* Initialization and main thread.                                           */
+/*===========================================================================*/
 
 /*
  * Application entry point.
  */
 int main(void) {
+  Thread *shelltp = NULL;
 
   /*
    * System initializations.
@@ -204,6 +227,27 @@ int main(void) {
   chSysInit();
 
   /*
+   * Shell manager initialization.
+   */
+  shellInit();
+
+  /*
+   * Initializes a serial-over-USB CDC driver.
+   */
+  sduObjectInit(&SDU1);
+  sduStart(&SDU1, &serusbcfg);
+
+  /*
+   * Activates the USB driver and then the USB bus pull-up on D+.
+   * Note, a delay is inserted in order to not have to disconnect the cable
+   * after a reset.
+   */
+  usbDisconnectBus(serusbcfg.usbp);
+  chThdSleepMilliseconds(1000);
+  usbStart(serusbcfg.usbp, &usbcfg);
+  usbConnectBus(serusbcfg.usbp);
+
+  /*
    * Activates the serial driver 2 using the driver default configuration.
    * PA2(TX) and PA3(RX) are routed to USART2.
    */
@@ -212,12 +256,10 @@ int main(void) {
   palSetPadMode(GPIOA, 3, PAL_MODE_ALTERNATE(7));
 
   /*
-   * If the user button is pressed after the reset then the test suite is
-   * executed immediately before activating the various device drivers in
-   * order to not alter the benchmark scores.
+   * Initializes the SPI driver 1 in order to access the MEMS. The signals
+   * are already initialized in the board file.
    */
-  if (palReadPad(GPIOA, GPIOA_BUTTON))
-    TestThread(&SD2);
+  spiStart(&SPID1, &spi1cfg);
 
   /*
    * Initializes the SPI driver 2. The SPI2 signals are routed as follow:
@@ -237,51 +279,39 @@ int main(void) {
                            PAL_STM32_OSPEED_HIGHEST);           /* MOSI.    */
 
   /*
-   * Initializes the ADC driver 1 and enable the thermal sensor.
-   * The pin PC0 on the port GPIOC is programmed as analog input.
-   */
-  adcStart(&ADCD1, NULL);
-  adcSTM32EnableTSVREFE();
-  palSetPadMode(GPIOC, 1, PAL_MODE_INPUT_ANALOG);
-
-  /*
    * Initializes the PWM driver 4, routes the TIM4 outputs to the board LEDs.
    */
   pwmStart(&PWMD4, &pwmcfg);
-  palSetPadMode(GPIOD, GPIOD_LED4, PAL_MODE_ALTERNATE(2));  /* Green.   */
-  palSetPadMode(GPIOD, GPIOD_LED6, PAL_MODE_ALTERNATE(2));  /* Blue.    */
+  palSetPadMode(GPIOD, GPIOD_LED4, PAL_MODE_ALTERNATE(2));      /* Green.   */
+  palSetPadMode(GPIOD, GPIOD_LED3, PAL_MODE_ALTERNATE(2));      /* Orange.  */
+  palSetPadMode(GPIOD, GPIOD_LED5, PAL_MODE_ALTERNATE(2));      /* Red.     */
+  palSetPadMode(GPIOD, GPIOD_LED6, PAL_MODE_ALTERNATE(2));      /* Blue.    */
 
   /*
    * Creates the example thread.
    */
-  chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
+  chThdCreateStatic(waThread1, sizeof(waThread1),
+                    NORMALPRIO + 10, Thread1, NULL);
 
   /*
-   * Initializes the SPI driver 1 in order to access the MEMS. The signals
-   * are initialized in the board file.
-   * Several LIS302DL registers are then initialized.
-   */
-  spiStart(&SPID1, &spi1cfg);
-  lis302dlWriteRegister(&SPID1, LIS302DL_CTRL_REG1, 0x43);
-  lis302dlWriteRegister(&SPID1, LIS302DL_CTRL_REG2, 0x00);
-  lis302dlWriteRegister(&SPID1, LIS302DL_CTRL_REG3, 0x00);
-
-  /*
-   * Normal main() thread activity, in this demo it does nothing except
-   * sleeping in a loop and check the button state, when the button is
-   * pressed the test procedure is launched with output on the serial
-   * driver 2.
+   * Normal main() thread activity, in this demo it just performs
+   * a shell respawn upon its termination.
    */
   while (TRUE) {
-    int8_t x, y, z;
-
-    if (palReadPad(GPIOA, GPIOA_BUTTON))
-      TestThread(&SD2);
-
-    x = (int8_t)lis302dlReadRegister(&SPID1, LIS302DL_OUTX);
-    y = (int8_t)lis302dlReadRegister(&SPID1, LIS302DL_OUTY);
-    z = (int8_t)lis302dlReadRegister(&SPID1, LIS302DL_OUTZ);
-    chprintf((BaseChannel *)&SD2, "%d, %d, %d\r\n", x, y, z);
+    if (!shelltp) {
+      if (SDU1.config->usbp->state == USB_ACTIVE) {
+        /* Spawns a new shell.*/
+        shelltp = shellCreate(&shell_cfg1, SHELL_WA_SIZE, NORMALPRIO);
+      }
+    }
+    else {
+      /* If the previous shell exited.*/
+      if (chThdTerminated(shelltp)) {
+        /* Recovers memory of the previous shell.*/
+        chThdRelease(shelltp);
+        shelltp = NULL;
+      }
+    }
     chThdSleepMilliseconds(500);
   }
 }

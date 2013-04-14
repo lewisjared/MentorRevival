@@ -61,10 +61,10 @@ endif
 #
 
 # Define project name here
-PROJECT = mentorRevive
+PROJECT = MentorRevival
 
 # Imported source files and paths
-CHIBIOS = /data/docs/code/lib/ChibiOS_2.4.3
+CHIBIOS = /home/jared/src/ChibiOS
 include $(CHIBIOS)/boards/ST_STM32F4_DISCOVERY/board.mk
 include $(CHIBIOS)/os/hal/platforms/STM32F4xx/platform.mk
 include $(CHIBIOS)/os/hal/hal.mk
@@ -84,9 +84,10 @@ CSRC = $(PORTSRC) \
        $(HALSRC) \
        $(PLATFORMSRC) \
        $(BOARDSRC) \
-       $(CHIBIOS)/os/various/lis302dl.c \
+       $(CHIBIOS)/os/various/devices_lib/accel/lis302dl.c \
+       $(CHIBIOS)/os/various/shell.c \
        $(CHIBIOS)/os/various/chprintf.c \
-       src/main.c
+       src/usbcfg.c src/main.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -117,6 +118,7 @@ ASMSRC = $(PORTASM)
 
 INCDIR = $(PORTINC) $(KERNINC) $(TESTINC) \
          $(HALINC) $(PLATFORMINC) $(BOARDINC) \
+         $(CHIBIOS)/os/various/devices_lib/accel \
          $(CHIBIOS)/os/various \
          include
 
