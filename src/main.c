@@ -201,6 +201,7 @@ static msg_t Thread1(void *arg) {
       pwmEnableChannel(&PWMD4, 1, (pwmcnt_t)0);
     }
 
+    chprintf(&SDU1, "X:%d Y:%d\r\n", x,y);
     /* Waiting until the next 250 milliseconds time interval.*/
     chThdSleepUntil(time += MS2ST(100));
   }
@@ -301,7 +302,7 @@ int main(void) {
     if (!shelltp) {
       if (SDU1.config->usbp->state == USB_ACTIVE) {
         /* Spawns a new shell.*/
-        shelltp = shellCreate(&shell_cfg1, SHELL_WA_SIZE, NORMALPRIO);
+//        shelltp = shellCreate(&shell_cfg1, SHELL_WA_SIZE, NORMALPRIO);
       }
     }
     else {
