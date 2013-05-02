@@ -34,7 +34,7 @@
  * @brief   Enables the TM subsystem.
  */
 #if !defined(HAL_USE_TM) || defined(__DOXYGEN__)
-#define HAL_USE_TM                  FALSE
+#define HAL_USE_TM                  TRUE
 #endif
 
 /**
@@ -48,7 +48,7 @@
  * @brief   Enables the ADC subsystem.
  */
 #if !defined(HAL_USE_ADC) || defined(__DOXYGEN__)
-#define HAL_USE_ADC                 FALSE
+#define HAL_USE_ADC                 TRUE
 #endif
 
 /**
@@ -104,7 +104,7 @@
  * @brief   Enables the PWM subsystem.
  */
 #if !defined(HAL_USE_PWM) || defined(__DOXYGEN__)
-#define HAL_USE_PWM                 TRUE
+#define HAL_USE_PWM                 FALSE
 #endif
 
 /**
@@ -132,28 +132,28 @@
  * @brief   Enables the SERIAL over USB subsystem.
  */
 #if !defined(HAL_USE_SERIAL_USB) || defined(__DOXYGEN__)
-#define HAL_USE_SERIAL_USB          TRUE
+#define HAL_USE_SERIAL_USB          FALSE
 #endif
 
 /**
  * @brief   Enables the SPI subsystem.
  */
 #if !defined(HAL_USE_SPI) || defined(__DOXYGEN__)
-#define HAL_USE_SPI                 TRUE
+#define HAL_USE_SPI                 FALSE
 #endif
 
 /**
  * @brief   Enables the UART subsystem.
  */
 #if !defined(HAL_USE_UART) || defined(__DOXYGEN__)
-#define HAL_USE_UART                FALSE
+#define HAL_USE_UART                TRUE
 #endif
 
 /**
  * @brief   Enables the USB subsystem.
  */
 #if !defined(HAL_USE_USB) || defined(__DOXYGEN__)
-#define HAL_USE_USB                 TRUE
+#define HAL_USE_USB                 FALSE
 #endif
 
 /*===========================================================================*/

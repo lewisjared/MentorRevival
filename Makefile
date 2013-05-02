@@ -5,7 +5,7 @@
 
 # Compiler options here.
 ifeq ($(USE_OPT),)
-  USE_OPT = -ggdb -fomit-frame-pointer -falign-functions=16
+  USE_OPT = -O0 -ggdb -fomit-frame-pointer -falign-functions=16
 endif
 
 # C specific options here (added to USE_OPT).
@@ -64,7 +64,7 @@ endif
 PROJECT = MentorRevival
 
 # Imported source files and paths
-CHIBIOS = /home/jared/src/ChibiOS
+CHIBIOS = D:/docs/code/lib/ChibiOS
 include $(CHIBIOS)/boards/ST_STM32F4_DISCOVERY/board.mk
 include $(CHIBIOS)/os/hal/platforms/STM32F4xx/platform.mk
 include $(CHIBIOS)/os/hal/hal.mk
@@ -84,10 +84,8 @@ CSRC = $(PORTSRC) \
        $(HALSRC) \
        $(PLATFORMSRC) \
        $(BOARDSRC) \
-       $(CHIBIOS)/os/various/devices_lib/accel/lis302dl.c \
-       $(CHIBIOS)/os/various/shell.c \
-       $(CHIBIOS)/os/various/chprintf.c \
-       src/usbcfg.c src/main.c
+       $(CHIBIOS)/os/various/chprintf.c $(CHIBIOS)/os/various/shell.c \
+       src/main.c src/adcThread.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -118,7 +116,6 @@ ASMSRC = $(PORTASM)
 
 INCDIR = $(PORTINC) $(KERNINC) $(TESTINC) \
          $(HALINC) $(PLATFORMINC) $(BOARDINC) \
-         $(CHIBIOS)/os/various/devices_lib/accel \
          $(CHIBIOS)/os/various \
          include
 
