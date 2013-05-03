@@ -85,7 +85,7 @@ CSRC = $(PORTSRC) \
        $(PLATFORMSRC) \
        $(BOARDSRC) \
        $(CHIBIOS)/os/various/chprintf.c $(CHIBIOS)/os/various/shell.c \
-       src/main.c src/adcThread.c
+       src/main.c src/adcThread.c src/motor.c src/joystick.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.

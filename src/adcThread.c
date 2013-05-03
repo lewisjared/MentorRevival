@@ -21,7 +21,6 @@ static adcsample_t rawSamples[ADC_NUM_CHANNELS * ADC_BUFF_DEPTH];
 /*
  * ADC streaming callback.
  */
-size_t nx = 0, ny = 0;
 static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
 
   (void)adcp;

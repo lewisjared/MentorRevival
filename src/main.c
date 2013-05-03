@@ -1,24 +1,18 @@
 /*
-    ChibiOS/RT - Copyright (C) 2006-2013 Giovanni Di Sirio
+	Main Thread
 
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
+	This program is used to control a Mentor Robot arm.
 
-        http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+	Github: https://github.com/LewisJared/MentorRevival
 */
 
 #include "ch.h"
 #include "hal.h"
 #include "chprintf.h"
 
-#include "adcThread.h"
+#include "joystick.h"
+#include "motor.h"
+
 
 static const SerialConfig serConf ={
 	38400,
@@ -43,36 +37,34 @@ int main(void) {
   chSysInit();
 
   /*
-   * Activates the UART driver 2, PA2(TX) and PA3(RX) are routed to USART2.
+   * Activates the UART driver 2, PD5(TX) and PD6(RX) are routed to USART2.
    */
-  //uartStart(&UARTD2, &uart_cfg_1);
   palSetPadMode(GPIOD, 5, PAL_MODE_ALTERNATE(7));
   palSetPadMode(GPIOD, 6, PAL_MODE_ALTERNATE(7));
 
   //sdObjectInit(&SD2, NULL, NULL);
   sdStart(&SD2,NULL);
 
-  ADC_init();
+  joy_init();
+  motor_init();
 
-  adcsample_t copyData[ADC_NUM_CHANNELS];
+  joypos_t joystickData[NUM_JOYSTICKS];
   int i;
 
   //Event loop simply updates the current positions
   while (TRUE) {
     chThdSleepMilliseconds(200);
 
-    //Copy the adc values to local data
-    chSysLock();
-
-    for (i = 0; i < ADC_NUM_CHANNELS; i++)
-    {
-    	copyData[i] = currentPos[i];
-    }
-    chSysUnlock();
+    // Get the latest joystick Vals
+	joy_getValues(joystickData);
 
     //Now print the data to the serial driver
-    for (i = 0; i < ADC_NUM_CHANNELS; i++)
-    	chprintf((BaseSequentialStream*)&SD2, "Val %d:%d ", i, copyData[i]);
+    for (i = 0; i < NUM_JOYSTICKS; i++)
+    {
+    	chprintf((BaseSequentialStream*)&SD2, "Val %d:%d %d ", i, joystickData[i].pos, joystickData[i].dir);
+    	motor_setDir(i, joystickData[i].dir);
+    	motor_setSpeed(i, joystickData[i].pos);
+    }
     chprintf((BaseSequentialStream*)&SD2, "\r\n");
   }
 }
