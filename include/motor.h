@@ -12,8 +12,7 @@
 #define MOTOR_H_
 
 
-#define NUM_MOTOR 2
-
+#define NUM_MOTOR 6
 
 /**
  * Initialises the motors ready to be used. Must be called before setting speed.
