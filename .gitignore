@@ -1,7 +1,6 @@
 # Ignore eclipse project files
-.cproject
-.project
 .dep
+
 build
 
 /*~
