@@ -12,7 +12,7 @@
 #define MOTOR_H_
 
 
-#define NUM_MOTOR 6
+#define NUM_MOTOR 1
 
 /**
  * Initialises the motors ready to be used. Must be called before setting speed.
@@ -22,9 +22,9 @@ void motor_init(void);
 /**
  * Sets the direction of travel for a given motor
  * \param motorNum Motor Number to alter. In range [0:NUM_MOTORS-1]
- * \param direction Direction of travel. Direction > 0 moves in one direction <= 0  moves in the other
+ * \param direction Direction of travel. True or False
  */
-void motor_setDir(int motorNum, int direction);
+void motor_setDir(int motorNum, bool direction);
 
 /**
  * Sets the speed of a given motor
@@ -32,6 +32,13 @@ void motor_setDir(int motorNum, int direction);
  * \param speed Sets the speed of the motor. [0..1024] maps to 0 to 100%
  */
 void motor_setSpeed(int motorNum, uint16_t speed);
+
+/**
+ * Applies the brakes on a given motor.
+ * \param motorNum Motor Number to alter. In range [0:NUM_MOTORS-1]
+ * \param brake If true applies brakes.
+ */
+void motor_setBrakes(int motorNum, bool brake);
 
 
 #endif /* MOTOR_H_ */

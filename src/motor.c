@@ -7,7 +7,9 @@
 #include "ch.h"
 #include "hal.h"
 
+#include "pin.h"
 #include "motor.h"
+
 
 /** PWM clock frequency in Hz */
 #define PWM_CLOCK_FREQUENCY	10000
@@ -54,66 +56,22 @@ static PWMConfig pwmcfg4 = {
 
 
 typedef struct {
-	GPIO_TypeDef *port;
-	uint8_t pinA;
-	uint8_t pinB;
+	pin_t phase;
+	pin_t enable;
+	pin_t mode1;
 	PWMDriver *pwmDriver;
  	pwmchannel_t pwmChannel;
- 	GPIO_TypeDef *pwmPort;
-	uint8_t pwmPin;
 } Motor_struct;
 
 
 static const Motor_struct motors[NUM_MOTOR] =
 {
 	{ //Motor 1
-		GPIOD, 	//Pin Port
-		0,		//PinA
-		1,		//PinB
+		{GPIOD,0},	//Phase
+		{GPIOD,12},	//Enable
+		{GPIOD,1},	//Mode1
 		&PWMD4, //PWM Driver
 		0,		//PWM Channel
-		GPIOD,	//PWM Pin Port
-		12		//PWM Pin #
-	}, { //Motor 2
-		GPIOD, 	//Pin Port
-		2,		//PinA
-		3,		//PinB
-		&PWMD4, //PWM Driver
-		1,		//PWM Channel
-		GPIOD,	//PWM Pin Port
-		13		//PWM Pin #
-	}, { //Motor 3
-		GPIOE, 	//Pin Port
-		0,		//PinA
-		1,		//PinB
-		&PWMD3, //PWM Driver
-		0,		//PWM Channel
-		GPIOC,	//PWM Pin Port
-		6		//PWM Pin #
-	}, 	{ //Motor 4
-		GPIOE, 	//Pin Port
-		7,		//PinA
-		8,		//PinB
-		&PWMD3, //PWM Driver
-		1,		//PWM Channel
-		GPIOC,	//PWM Pin Port
-		7		//PWM Pin #
-	}, { //Motor 5
-		GPIOE, 	//Pin Port
-		9,		//PinA
-		10,		//PinB
-		&PWMD3, //PWM Driver
-		2,		//PWM Channel
-		GPIOC,	//PWM Pin Port
-		8		//PWM Pin #
-	}, { //Motor 6
-		GPIOE, 	//Pin Port
-		11,		//PinA
-		12,		//PinB
-		&PWMD3, //PWM Driver
-		3,		//PWM Channel
-		GPIOC,	//PWM Pin Port
-		9		//PWM Pin #
 	}
 };
 
@@ -121,26 +79,6 @@ void motor_init(void)
 {
 	pwmStart(&PWMD3, &pwmcfg3);
 	pwmStart(&PWMD4, &pwmcfg4);
-
-	//Pin Setup
-	//M1
-	palSetPadMode(GPIOD, 0, PAL_MODE_OUTPUT_OPENDRAIN);
-	palSetPadMode(GPIOD, 1, PAL_MODE_OUTPUT_OPENDRAIN);
-	//M2
-	palSetPadMode(GPIOD, 2, PAL_MODE_OUTPUT_OPENDRAIN);
-	palSetPadMode(GPIOD, 3, PAL_MODE_OUTPUT_OPENDRAIN);
-	//M3
-	palSetPadMode(GPIOE, 0, PAL_MODE_OUTPUT_OPENDRAIN);
-	palSetPadMode(GPIOE, 1, PAL_MODE_OUTPUT_OPENDRAIN);
-	//M4
-	palSetPadMode(GPIOE, 7, PAL_MODE_OUTPUT_OPENDRAIN);
-	palSetPadMode(GPIOE, 8, PAL_MODE_OUTPUT_OPENDRAIN);
-	//M5
-	palSetPadMode(GPIOE, 9, PAL_MODE_OUTPUT_OPENDRAIN);
-	palSetPadMode(GPIOE, 10, PAL_MODE_OUTPUT_OPENDRAIN);
-	//M6
-	palSetPadMode(GPIOE, 11, PAL_MODE_OUTPUT_OPENDRAIN);
-	palSetPadMode(GPIOE, 12, PAL_MODE_OUTPUT_OPENDRAIN);
 
 	//Configure PWM pins
 	palSetPadMode(GPIOD, 12, PAL_MODE_ALTERNATE(2)); //M1
@@ -153,13 +91,16 @@ void motor_init(void)
 	int i = 0;
 	for (i = 0; i< NUM_MOTOR; i++)
 	{
+		configPinOpenDrain(motors[i].mode1);
+		configPinOpenDrain(motors[i].phase);
 		pwmcnt_t count = PWM_PERCENTAGE_TO_WIDTH(motors[i].pwmDriver, 0);
 		pwmEnableChannel(motors[i].pwmDriver, motors[i].pwmChannel, count);
-		palSetPad(motors[i].port,motors[i].pinA);
-		palClearPad(motors[i].port,motors[i].pinB);
+		setPin(motors[i].phase, PAL_HIGH);
 	}
 }
 
+
+//Speed control is by appplying a pwm signal to the enable pin
 void motor_setSpeed(int motorNum, uint16_t speed)
 {
 	if (motorNum < NUM_MOTOR && motorNum >= 0)
@@ -169,17 +110,20 @@ void motor_setSpeed(int motorNum, uint16_t speed)
 	}
 }
 
-void motor_setDir(int motorNum, int dir)
+void motor_setDir(int motorNum, bool dir)
 {
 	if (motorNum < NUM_MOTOR && motorNum >= 0)
 	{
-		if (dir)
-		{
-			palSetPad(motors[motorNum].port,motors[motorNum].pinA);
-			palClearPad(motors[motorNum].port,motors[motorNum].pinB);
-		} else {
-			palClearPad(motors[motorNum].port,motors[motorNum].pinA);
-			palSetPad(motors[motorNum].port,motors[motorNum].pinB);
-		}
+		setPin(motors[motorNum].phase, dir);
+	}
+}
+
+//Brakes are applied by setting mode1 high
+// Note that the enable pin must also be low.
+void motor_setBrakes(int motorNum, bool brake)
+{
+	if (motorNum < NUM_MOTOR && motorNum >= 0)
+	{
+		setPin(motors[motorNum].mode1, brake);
 	}
 }
