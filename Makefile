@@ -64,7 +64,7 @@ endif
 PROJECT = MentorRevival
 
 # Imported source files and paths
-CHIBIOS = D:/docs/code/lib/ChibiOS
+CHIBIOS = C:/ChibiOS
 include $(CHIBIOS)/boards/ST_STM32F4_DISCOVERY/board.mk
 include $(CHIBIOS)/os/hal/platforms/STM32F4xx/platform.mk
 include $(CHIBIOS)/os/hal/hal.mk
@@ -85,7 +85,8 @@ CSRC = $(PORTSRC) \
        $(PLATFORMSRC) \
        $(BOARDSRC) \
        $(CHIBIOS)/os/various/chprintf.c $(CHIBIOS)/os/various/shell.c \
-       src/main.c src/adcThread.c src/motor.c src/joystick.c
+       src/main.c src/adcThread.c src/motor.c src/joystick.c \
+       src/events.c src/packet.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.

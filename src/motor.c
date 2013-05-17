@@ -67,7 +67,7 @@ typedef struct {
 static const Motor_struct motors[NUM_MOTOR] =
 {
 	{ //Motor 1
-		{GPIOD,0},	//Phase
+		{GPIOD,2},	//Phase
 		{GPIOD,12},	//Enable
 		{GPIOD,1},	//Mode1
 		&PWMD4, //PWM Driver
