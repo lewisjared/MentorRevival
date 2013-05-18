@@ -55,5 +55,24 @@ void joy_getValues(joypos_t* buff)
 		} else
 			buff[i].pos = 0;
 	}
+}
 
+void joy_getValue(uint8_t axis, joypos_t buff)
+{
+	//Copy the ADC values into buff
+	adcsample_t rawVal;
+	chSysLock()
+	rawVal = currentPos[axis];
+	chSysUnlock();
+
+	buff.dir = (rawVal > MIDPOINT);
+	uint16_t mag = (uint16_t) abs(rawVal - MIDPOINT);
+	if (mag > JOY_THRES)
+	{
+		mag -= JOY_THRES;
+
+		//Scale from 0 to JOY_FULL_SCALE
+		buff.pos = (mag * JOY_FULL_SCALE) / VALUE_SPAN;
+	} else
+		buff.pos = 0;
 }

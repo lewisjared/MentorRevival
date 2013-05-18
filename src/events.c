@@ -17,6 +17,7 @@
 static packet_t s_packet;
 static circ_t packetBuf;
 static packet_t _packetData[PACKET_BUFFER_LEN];
+static Semaphore packetSem;
 
 /**********************************************************
  * UART interrupts
@@ -64,6 +65,9 @@ static void rxchar(UARTDriver *uartp, uint16_t c)
 		//Queue up for application
 		circ_write(&packetBuf, &s_packet);
 
+		//Signal the semaphore that there is more data
+		chSemSignal(&packetSem);
+
 		//Clear the current packet
 		initPacket(&s_packet);
 	}
@@ -96,25 +100,54 @@ static UARTConfig uart_cfg_1 = {
 /********************************************************************
  * Event Functions
  ********************************************************************/
-
-
+void evt_halt(packet_t packet);
+void evt_readCurrent(packet_t packet);
+void evt_readPos(packet_t packet);
+void evt_setMode(packet_t packet);
+void evt_setDuty(packet_t packet);
 
 static WORKING_AREA(waEvtThread,256);
-static msg_t eventThread(void *arg) {
+static msg_t eventThread(void *arg)
+{
+	(void)arg;
+	chRegSetThreadName("eventThread");
 
-  (void)arg;
-  chRegSetThreadName("eventThread");
-  while (TRUE) {
+	chSemInit(&packetSem,0);
 
-	  //Wait for command
+	packet_t currentPacket;
 
-	  //Extract command
+	while (TRUE) {
+		//Wait for command
+		chSemWait(&packetSem);
 
-	  //Parse command
+		//Extract command
+		circ_read(&packetBuf, &currentPacket);
 
-	  //Buffer output
+		switch(currentPacket.command)
+		{
+		case CMD_HALT:
+			evt_halt(currentPacket);
+			break;
+		case CMD_READ_CURRENT:
+			evt_readCurrent(currentPacket);
+			break;
+		case CMD_READ_POS:
+			evt_readPos(currentPacket);
+			break;
+		case CMD_SET_DUTY:
+			evt_setDuty(currentPacket);
+			break;
+		case CMD_SET_MODE:
+			evt_setMode(currentPacket);
+			break;
+		default:
+			evt_badCommand(currentPacket);
+			break;
+		}
 
-  }
+		//Buffer output
+
+	}
 }
 
 void evt_init(void)
@@ -136,4 +169,39 @@ void evt_init(void)
 	chThdCreateStatic(waEvtThread, sizeof(waEvtThread), NORMALPRIO, eventThread, NULL);
 
 	//Now the state machine operates in its own thread while main thread continues
+}
+
+
+/******************************
+ * Event Definitions
+ *****************************/
+void evt_halt(packet_t packet)
+{
+	int i = 0;
+	//Set all duty cycles to 0% and apply breaks
+	for (i = 0; i < 6; i++)
+	{
+		motor_setSpeed(packet.targetAxis,0);
+		motor_setBrakes(packet.targetAxis, 1);
+	}
+}
+
+void evt_readCurrent(packet_t packet)
+{
+
+}
+
+void evt_readPos(packet_t packet)
+{
+
+}
+
+void evt_setMode(packet_t packet)
+{
+	motor_setBrakes(packet.targetAxis, packet.data);
+}
+
+void evt_setDuty(packet_t packet)
+{
+	motor_setSpeed(packet.targetAxis,packet.data);
 }
