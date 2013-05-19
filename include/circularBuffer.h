@@ -80,6 +80,12 @@ int circ_write(circ_t* circ, const void * buf)
 	}
 	memcpy((circ->buf + circ->itemSize*circ->head),buf, circ->itemSize);
 
+	//Increment head
+	circ->head++;
+	//Check for wraparound
+	if (circ->head == circ->size)
+		circ->head = 0;
+
 	return 1;
 }
 

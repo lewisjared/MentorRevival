@@ -64,7 +64,8 @@ endif
 PROJECT = MentorRevival
 
 # Imported source files and paths
-CHIBIOS = C:/ChibiOS
+#CHIBIOS = C:/ChibiOS
+CHIBIOS = D:/docs/code/lib/ChibiOS
 include $(CHIBIOS)/boards/ST_STM32F4_DISCOVERY/board.mk
 include $(CHIBIOS)/os/hal/platforms/STM32F4xx/platform.mk
 include $(CHIBIOS)/os/hal/hal.mk

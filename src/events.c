@@ -9,6 +9,7 @@
 #include "ch.h"
 
 
+#include "motor.h"
 #include "packet.h"
 #include "circularBuffer.h"
 
@@ -57,19 +58,21 @@ static void rxerr(UARTDriver *uartp, uartflags_t e) {
 static void rxchar(UARTDriver *uartp, uint16_t c)
 {
 	//Append the char to the current packet.
-	appendByte(&s_packet, c);
+	pkt_appendByte(&s_packet, c);
 
 	//Check if the packet is full to pass to the application
-	if (isComplete(&s_packet))
+	if (pkt_isComplete(&s_packet))
 	{
 		//Queue up for application
 		circ_write(&packetBuf, &s_packet);
 
 		//Signal the semaphore that there is more data
-		chSemSignal(&packetSem);
+		chSysLockFromIsr();
+		chSemSignalI(&packetSem);
+		chSysUnlockFromIsr();
 
 		//Clear the current packet
-		initPacket(&s_packet);
+		pkt_init(&s_packet);
 	}
 }
 
@@ -105,6 +108,9 @@ void evt_readCurrent(packet_t packet);
 void evt_readPos(packet_t packet);
 void evt_setMode(packet_t packet);
 void evt_setDuty(packet_t packet);
+void evt_badCommand(packet_t packet);
+
+void evt_sendPacket(packet_t packet);
 
 static WORKING_AREA(waEvtThread,256);
 static msg_t eventThread(void *arg)
@@ -146,14 +152,15 @@ static msg_t eventThread(void *arg)
 		}
 
 		//Buffer output
-
+		//For now just repeat the command back to the host
+		evt_sendPacket(currentPacket);
 	}
 }
 
 void evt_init(void)
 {
 	// initialises the temp packet
-	initPacket(&s_packet);
+	pkt_init(&s_packet);
 
 	//initialse the packet buffer
 	circ_init(&packetBuf,_packetData,sizeof(packet_t), PACKET_BUFFER_LEN);
@@ -204,4 +211,22 @@ void evt_setMode(packet_t packet)
 void evt_setDuty(packet_t packet)
 {
 	motor_setSpeed(packet.targetAxis,packet.data);
+}
+
+void evt_badCommand(packet_t packet)
+{
+
+}
+
+/**
+ * Sends a packet to the host
+ */
+void evt_sendPacket(packet_t packet)
+{
+	//Get the encoded version
+	char buf[4];
+	pkt_encode(&packet, buf);
+
+	//add to UART buffer
+	uartStartSend(&UARTD2, 4, buf);
 }
