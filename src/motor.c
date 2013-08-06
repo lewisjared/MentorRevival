@@ -67,18 +67,18 @@ typedef struct {
 static const Motor_struct motors[NUM_MOTOR] =
 {
 	{ //Motor 1
-		{GPIOD,2},	//Phase
-		{GPIOD,12},	//Enable
-		{GPIOD,1},	//Mode1
-		&PWMD4, //PWM Driver
-		0,		//PWM Channel
+		{GPIOC,2},	//Phase
+		{GPIOC,8},	//Enable
+		{GPIOC,1},	//Mode1
+		&PWMD3, //PWM Driver
+		2,		//PWM Channel
 	}
 };
 
 void motor_init(void)
 {
 	pwmStart(&PWMD3, &pwmcfg3);
-	pwmStart(&PWMD4, &pwmcfg4);
+	//pwmStart(&PWMD4, &pwmcfg4);
 
 	//Configure PWM pins
 	palSetPadMode(GPIOD, 12, PAL_MODE_ALTERNATE(2)); //M1

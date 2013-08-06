@@ -21,7 +21,7 @@ static adcsample_t rawSamples[ADC_NUM_CHANNELS * ADC_BUFF_DEPTH];
 /*
  * ADC streaming callback.
  */
-static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
+static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n ) {
 
   (void)adcp;
 
@@ -56,8 +56,8 @@ static const ADCConversionGroup adcgrpcfg = {
   0,                        /* CR1 */
   ADC_CR2_SWSTART,          /* CR2 */
   0,
-  ADC_SMPR2_SMP_AN0(ADC_SAMPLE_56) | ADC_SMPR2_SMP_AN1(ADC_SAMPLE_56) |
-  ADC_SMPR2_SMP_AN2(ADC_SAMPLE_56) | ADC_SMPR2_SMP_AN3(ADC_SAMPLE_56),                        /* SMPR2 */
+  ADC_SMPR2_SMP_AN0(ADC_SAMPLE_55P5) | ADC_SMPR2_SMP_AN1(ADC_SAMPLE_55P5) |
+  ADC_SMPR2_SMP_AN2(ADC_SAMPLE_55P5) | ADC_SMPR2_SMP_AN3(ADC_SAMPLE_55P5),                        /* SMPR2 */
   ADC_SQR1_NUM_CH(ADC_NUM_CHANNELS), //SQR1
   0, // SQR2
   ADC_SQR3_SQ4_N(ADC_CHANNEL_IN3)   | ADC_SQR3_SQ3_N(ADC_CHANNEL_IN2) |

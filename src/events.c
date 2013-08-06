@@ -8,9 +8,8 @@
 #include "hal.h"
 #include "ch.h"
 
-
+#include "common.h"
 #include "motor.h"
-#include "joystick.h"
 #include "packet.h"
 #include "circularBuffer.h"
 
@@ -58,6 +57,7 @@ static void rxerr(UARTDriver *uartp, uartflags_t e) {
  */
 static void rxchar(UARTDriver *uartp, uint16_t c)
 {
+	UNUSED(uartp);
 	//Append the char to the current packet.
 	pkt_appendByte(&s_packet, c);
 
@@ -94,7 +94,7 @@ static UARTConfig uart_cfg_1 = {
   rxend,
   rxchar,
   rxerr,
-  115200,
+  38400,
   0,
   USART_CR2_LINEN,
   0
@@ -104,12 +104,12 @@ static UARTConfig uart_cfg_1 = {
 /********************************************************************
  * Event Functions
  ********************************************************************/
-void evt_halt(packet_t packet, packet_t* reply);
-void evt_readCurrent(packet_t packet, packet_t* reply);
-void evt_readPos(packet_t packet, packet_t* reply);
-void evt_setMode(packet_t packet, packet_t* reply);
-void evt_setDuty(packet_t packet, packet_t* reply);
-void evt_badCommand(packet_t packet, packet_t* reply);
+void evt_halt(packet_t packet);
+void evt_readCurrent(packet_t packet);
+void evt_readPos(packet_t packet);
+void evt_setMode(packet_t packet);
+void evt_setDuty(packet_t packet);
+void evt_badCommand(packet_t packet);
 
 void evt_sendPacket(packet_t packet);
 
@@ -130,35 +130,31 @@ static msg_t eventThread(void *arg)
 		//Extract command
 		circ_read(&packetBuf, &currentPacket);
 
-		packet_t reply;
-		pkt_init(&reply);
-		reply.command = currentPacket.command;
-		reply.targetAxis = currentPacket.command;
-
 		switch(currentPacket.command)
 		{
 		case CMD_HALT:
-			evt_halt(currentPacket,&reply);
+			evt_halt(currentPacket);
 			break;
 		case CMD_READ_CURRENT:
-			evt_readCurrent(currentPacket,&reply);
+			evt_readCurrent(currentPacket);
 			break;
 		case CMD_READ_POS:
-			evt_readPos(currentPacket,&reply);
+			evt_readPos(currentPacket);
 			break;
 		case CMD_SET_DUTY:
-			evt_setDuty(currentPacket,&reply);
+			evt_setDuty(currentPacket);
 			break;
 		case CMD_SET_MODE:
-			evt_setMode(currentPacket,&reply);
+			evt_setMode(currentPacket);
 			break;
 		default:
-			evt_badCommand(currentPacket,&reply);
+			evt_badCommand(currentPacket);
 			break;
 		}
 
 		//Buffer output
-		evt_sendPacket(reply);
+		//For now just repeat the command back to the host
+		evt_sendPacket(currentPacket);
 	}
 }
 
@@ -167,15 +163,15 @@ void evt_init(void)
 	// initialises the temp packet
 	pkt_init(&s_packet);
 
-	//initialse the packet buffer
+	//initialise the packet buffer
 	circ_init(&packetBuf,_packetData,sizeof(packet_t), PACKET_BUFFER_LEN);
 
 	/*
 	 * Activates the UART driver 2, PD5(TX) and PD6(RX) are routed to USART2.
 	 */
-	uartStart(&UARTD2, &uart_cfg_1);
-	palSetPadMode(GPIOD, 5, PAL_MODE_ALTERNATE(7));
-	palSetPadMode(GPIOD, 6, PAL_MODE_ALTERNATE(7));
+	uartStart(&UARTD1, &uart_cfg_1);
+	palSetPadMode(GPIOA, 9, PAL_MODE_ALTERNATE(7));
+	palSetPadMode(GPIOA, 10, PAL_MODE_ALTERNATE(7));
 
 	// Create Event Thread. This thread is a basic state machine
 	chThdCreateStatic(waEvtThread, sizeof(waEvtThread), NORMALPRIO, eventThread, NULL);
@@ -187,7 +183,7 @@ void evt_init(void)
 /******************************
  * Event Definitions
  *****************************/
-void evt_halt(packet_t packet, packet_t* reply)
+void evt_halt(packet_t packet)
 {
 	int i = 0;
 	//Set all duty cycles to 0% and apply breaks
@@ -198,32 +194,30 @@ void evt_halt(packet_t packet, packet_t* reply)
 	}
 }
 
-void evt_readCurrent(packet_t packet, packet_t* reply)
+void evt_readCurrent(packet_t packet)
 {
-
+	UNUSED(packet);
 }
 
-void evt_readPos(packet_t packet, packet_t* reply)
+void evt_readPos(packet_t packet)
 {
-	joypos_t buff;
-	joy_getValue(packet.targetAxis, &buff);
-
-	reply->data = buff.pos;
+	UNUSED(packet);
 }
 
-void evt_setMode(packet_t packet, packet_t* reply)
+void evt_setMode(packet_t packet)
 {
 	motor_setBrakes(packet.targetAxis, packet.data);
 }
 
-void evt_setDuty(packet_t packet, packet_t* reply)
+void evt_setDuty(packet_t packet)
 {
 	motor_setSpeed(packet.targetAxis,packet.data);
 }
 
-void evt_badCommand(packet_t packet, packet_t* reply)
+void evt_badCommand(packet_t packet)
 {
-
+	UNUSED(packet);
+	//Do Nothing
 }
 
 /**
