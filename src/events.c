@@ -167,7 +167,7 @@ void evt_init(void)
 	circ_init(&packetBuf,_packetData,sizeof(packet_t), PACKET_BUFFER_LEN);
 
 	/*
-	 * Activates the UART driver 2, PD5(TX) and PD6(RX) are routed to USART2.
+	 * Activates the UART driver 1, PA9(TX) and PA10(RX) are routed to USART2.
 	 */
 	uartStart(&UARTD1, &uart_cfg_1);
 	palSetPadMode(GPIOA, 9, PAL_MODE_ALTERNATE(7));
@@ -230,5 +230,5 @@ void evt_sendPacket(packet_t packet)
 	pkt_encode(&packet, buf);
 
 	//add to UART buffer
-	uartStartSend(&UARTD2, 4, buf);
+	uartStartSend(&UARTD1, 4, buf);
 }
