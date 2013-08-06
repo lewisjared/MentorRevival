@@ -10,6 +10,7 @@
 
 
 #include "motor.h"
+#include "joystick.h"
 #include "packet.h"
 #include "circularBuffer.h"
 
@@ -93,7 +94,7 @@ static UARTConfig uart_cfg_1 = {
   rxend,
   rxchar,
   rxerr,
-  38400,
+  115200,
   0,
   USART_CR2_LINEN,
   0
@@ -103,12 +104,12 @@ static UARTConfig uart_cfg_1 = {
 /********************************************************************
  * Event Functions
  ********************************************************************/
-void evt_halt(packet_t packet);
-void evt_readCurrent(packet_t packet);
-void evt_readPos(packet_t packet);
-void evt_setMode(packet_t packet);
-void evt_setDuty(packet_t packet);
-void evt_badCommand(packet_t packet);
+void evt_halt(packet_t packet, packet_t* reply);
+void evt_readCurrent(packet_t packet, packet_t* reply);
+void evt_readPos(packet_t packet, packet_t* reply);
+void evt_setMode(packet_t packet, packet_t* reply);
+void evt_setDuty(packet_t packet, packet_t* reply);
+void evt_badCommand(packet_t packet, packet_t* reply);
 
 void evt_sendPacket(packet_t packet);
 
@@ -129,31 +130,35 @@ static msg_t eventThread(void *arg)
 		//Extract command
 		circ_read(&packetBuf, &currentPacket);
 
+		packet_t reply;
+		pkt_init(&reply);
+		reply.command = currentPacket.command;
+		reply.targetAxis = currentPacket.command;
+
 		switch(currentPacket.command)
 		{
 		case CMD_HALT:
-			evt_halt(currentPacket);
+			evt_halt(currentPacket,&reply);
 			break;
 		case CMD_READ_CURRENT:
-			evt_readCurrent(currentPacket);
+			evt_readCurrent(currentPacket,&reply);
 			break;
 		case CMD_READ_POS:
-			evt_readPos(currentPacket);
+			evt_readPos(currentPacket,&reply);
 			break;
 		case CMD_SET_DUTY:
-			evt_setDuty(currentPacket);
+			evt_setDuty(currentPacket,&reply);
 			break;
 		case CMD_SET_MODE:
-			evt_setMode(currentPacket);
+			evt_setMode(currentPacket,&reply);
 			break;
 		default:
-			evt_badCommand(currentPacket);
+			evt_badCommand(currentPacket,&reply);
 			break;
 		}
 
 		//Buffer output
-		//For now just repeat the command back to the host
-		evt_sendPacket(currentPacket);
+		evt_sendPacket(reply);
 	}
 }
 
@@ -182,7 +187,7 @@ void evt_init(void)
 /******************************
  * Event Definitions
  *****************************/
-void evt_halt(packet_t packet)
+void evt_halt(packet_t packet, packet_t* reply)
 {
 	int i = 0;
 	//Set all duty cycles to 0% and apply breaks
@@ -193,27 +198,30 @@ void evt_halt(packet_t packet)
 	}
 }
 
-void evt_readCurrent(packet_t packet)
+void evt_readCurrent(packet_t packet, packet_t* reply)
 {
 
 }
 
-void evt_readPos(packet_t packet)
+void evt_readPos(packet_t packet, packet_t* reply)
 {
+	joypos_t buff;
+	joy_getValue(packet.targetAxis, &buff);
 
+	reply->data = buff.pos;
 }
 
-void evt_setMode(packet_t packet)
+void evt_setMode(packet_t packet, packet_t* reply)
 {
 	motor_setBrakes(packet.targetAxis, packet.data);
 }
 
-void evt_setDuty(packet_t packet)
+void evt_setDuty(packet_t packet, packet_t* reply)
 {
 	motor_setSpeed(packet.targetAxis,packet.data);
 }
 
-void evt_badCommand(packet_t packet)
+void evt_badCommand(packet_t packet, packet_t* reply)
 {
 
 }

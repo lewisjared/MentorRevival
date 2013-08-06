@@ -47,6 +47,6 @@ void joy_getValues(joypos_t* buff);
  * \param axis Axis to sample.
  * \param buff Buffer to hold position.
  */
-void joy_getValue(uint8_t axis, joypos_t buff);
+void joy_getValue(uint8_t axis, joypos_t* buff);
 
 #endif /* JOYSTICK_H_ */
