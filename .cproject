@@ -43,12 +43,12 @@
 								<option id="org.eclipse.cdt.cross.arm.gnu.c.compiler.option.optimization.level.63820105" name="Optimization level" superClass="org.eclipse.cdt.cross.arm.gnu.c.compiler.option.optimization.level" value="org.eclipse.cdt.cross.arm.gnu.base.option.optimization.level.none" valueType="enumerated"/>
 								<option id="org.eclipse.cdt.cross.arm.gnu.c.compiler.option.include.paths.702919126" name="Include paths (-I)" superClass="org.eclipse.cdt.cross.arm.gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;D:\docs\code\lib\ChibiOS\os\hal\include&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;D:\docs\code\lib\ChibiOS\boards\ST_STM32F4_DISCOVERY&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;D:\docs\code\lib\ChibiOS\os\ports\GCC\ARMCMx\STM32F4xx&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;D:\docs\code\lib\ChibiOS\os\kernel\include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\Program Files (x86)\GNU Tools ARM Embedded\4.7 2013q1\arm-none-eabi\include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;D:\docs\code\lib\ChibiOS\os\ports\GCC\ARMCMx&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;D:\docs\code\lib\ChibiOS\os\various&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\ChibiOS\os\hal\platforms\STM32&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\ChibiOS\os\hal\platforms\STM32F37x&quot;"/>
 								</option>
 								<option id="org.eclipse.cdt.cross.arm.gnu.c.compiler.option.preprocessor.def.1565617411" name="Defined symbols (-D)" superClass="org.eclipse.cdt.cross.arm.gnu.c.compiler.option.preprocessor.def" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__DOXYGEN__"/>
@@ -83,6 +83,7 @@
 					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 					<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 					<extension id="org.eclipse.cdt.core.VCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.autotools.core.ErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
@@ -128,11 +129,11 @@
 		<scannerConfigBuildInfo instanceId="org.eclipse.cdt.cross.arm.gnu.sourcery.linux.elf.debug.1631438704;org.eclipse.cdt.cross.arm.gnu.sourcery.linux.elf.debug.1631438704.;org.eclipse.cdt.cross.arm.gnu.sourcery.linux.elf.c.compiler.debug.115304965;org.eclipse.cdt.cross.arm.gnu.sourcery.linux.c.compiler.base.input.1390751016">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.cross.arm.gnu.ARM_CS_GCCManagedMakePerProjectProfileC"/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="org.eclipse.cdt.cross.arm.gnu.sourcery.linux.elf.debug.1631438704;org.eclipse.cdt.cross.arm.gnu.sourcery.linux.elf.debug.1631438704.;org.eclipse.cdt.cross.arm.gnu.windows.cpp.compiler.base.1464181425;org.eclipse.cdt.cross.arm.gnu.windows.cpp.compiler.base.input.2146185923">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.cross.arm.gnu.ARM_GCCWinManagedMakePerProjectProfileCPP"/>
-		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="org.eclipse.cdt.cross.arm.gnu.sourcery.linux.elf.release.1026105344;org.eclipse.cdt.cross.arm.gnu.sourcery.linux.elf.release.1026105344.;org.eclipse.cdt.cross.arm.gnu.sourcery.linux.elf.assembler.release.2111564032;org.eclipse.cdt.cross.arm.gnu.sourcery.linux.assembler.base.input.529862248">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.cross.arm.gnu.ARM_CS_GCCManagedMakePerProjectProfileC"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="org.eclipse.cdt.cross.arm.gnu.sourcery.linux.elf.debug.1631438704;org.eclipse.cdt.cross.arm.gnu.sourcery.linux.elf.debug.1631438704.;org.eclipse.cdt.cross.arm.gnu.windows.cpp.compiler.base.1464181425;org.eclipse.cdt.cross.arm.gnu.windows.cpp.compiler.base.input.2146185923">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.cross.arm.gnu.ARM_GCCWinManagedMakePerProjectProfileCPP"/>
 		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="org.eclipse.cdt.cross.arm.gnu.sourcery.linux.elf.debug.1631438704;org.eclipse.cdt.cross.arm.gnu.sourcery.linux.elf.debug.1631438704.;org.eclipse.cdt.cross.arm.gnu.sourcery.linux.elf.assembler.debug.2124528275;org.eclipse.cdt.cross.arm.gnu.sourcery.linux.assembler.base.input.1871549646">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.cross.arm.gnu.ARM_CS_GCCManagedMakePerProjectProfileC"/>

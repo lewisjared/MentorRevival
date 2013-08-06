@@ -11,6 +11,7 @@
 
 
 #include <stdint.h>
+#include <string.h>
 
 typedef struct {
      void* buf;

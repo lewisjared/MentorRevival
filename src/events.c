@@ -8,9 +8,10 @@
 #include "hal.h"
 #include "ch.h"
 
-
+#include "common.h"
 #include "packet.h"
 #include "circularBuffer.h"
+#include "motor.h"
 
 #define PACKET_BUFFER_LEN 5
 
@@ -56,6 +57,7 @@ static void rxerr(UARTDriver *uartp, uartflags_t e) {
  */
 static void rxchar(UARTDriver *uartp, uint16_t c)
 {
+	UNUSED(uartp);
 	//Append the char to the current packet.
 	appendByte(&s_packet, c);
 
@@ -105,6 +107,7 @@ void evt_readCurrent(packet_t packet);
 void evt_readPos(packet_t packet);
 void evt_setMode(packet_t packet);
 void evt_setDuty(packet_t packet);
+void evt_badCommand(packet_t packet);
 
 static WORKING_AREA(waEvtThread,256);
 static msg_t eventThread(void *arg)
@@ -155,15 +158,15 @@ void evt_init(void)
 	// initialises the temp packet
 	initPacket(&s_packet);
 
-	//initialse the packet buffer
+	//initialise the packet buffer
 	circ_init(&packetBuf,_packetData,sizeof(packet_t), PACKET_BUFFER_LEN);
 
 	/*
 	 * Activates the UART driver 2, PD5(TX) and PD6(RX) are routed to USART2.
 	 */
-	uartStart(&UARTD2, &uart_cfg_1);
-	palSetPadMode(GPIOD, 5, PAL_MODE_ALTERNATE(7));
-	palSetPadMode(GPIOD, 6, PAL_MODE_ALTERNATE(7));
+	uartStart(&UARTD1, &uart_cfg_1);
+	palSetPadMode(GPIOA, 9, PAL_MODE_ALTERNATE(7));
+	palSetPadMode(GPIOA, 10, PAL_MODE_ALTERNATE(7));
 
 	// Create Event Thread. This thread is a basic state machine
 	chThdCreateStatic(waEvtThread, sizeof(waEvtThread), NORMALPRIO, eventThread, NULL);
@@ -188,12 +191,12 @@ void evt_halt(packet_t packet)
 
 void evt_readCurrent(packet_t packet)
 {
-
+	UNUSED(packet);
 }
 
 void evt_readPos(packet_t packet)
 {
-
+	UNUSED(packet);
 }
 
 void evt_setMode(packet_t packet)
@@ -204,4 +207,10 @@ void evt_setMode(packet_t packet)
 void evt_setDuty(packet_t packet)
 {
 	motor_setSpeed(packet.targetAxis,packet.data);
+}
+
+void evt_badCommand(packet_t packet)
+{
+	UNUSED(packet);
+	//Do Nothing
 }
