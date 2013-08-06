@@ -45,7 +45,7 @@ typedef struct {
  *
  * This function should be used to reset the packet before changing the data it contains
  */
-void initPacket(packet_t* packet);
+void pkt_init(packet_t* packet);
 
 /**
  * Creates a new packet
@@ -54,7 +54,7 @@ void initPacket(packet_t* packet);
  * \param target The target axis. This should be [0..5] for the case of the mentor.
  * \param data The data the the packet is to contain
  */
-packet_t createPacket(command_t command, uint8_t target, uint16_t data);
+packet_t pkt_create(command_t command, uint8_t target, uint16_t data);
 
 
 /**
@@ -68,15 +68,26 @@ packet_t createPacket(command_t command, uint8_t target, uint16_t data);
  * \param packet The packet to append to.
  * \param byte The char of data to append to the packet.
  */
-void appendByte(packet_t* packet, uint8_t byte);
+void pkt_appendByte(packet_t* packet, uint8_t byte);
 
 /**
  * Checks if the packet is full
  *
  * \returns True if the packet is full.
  */
-bool isComplete(packet_t*);
+bool pkt_isComplete(packet_t*);
 
+
+/**
+ * Determines the encoded version of the packet
+ *
+ * This requires a buffer of at least 4 bytes long
+ *
+ * \param packet The packet to be encoded.
+ * \param buff The buffer to hold the data.
+ *
+ */
+void pkt_encode(const packet_t* packet, char* buff);
 
 
 
