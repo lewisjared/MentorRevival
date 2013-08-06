@@ -10,6 +10,8 @@
 
 #include "packet.h"
 
+#include <string.h>
+
 void pkt_init(packet_t* packet)
 {
 	//Zeros the struct

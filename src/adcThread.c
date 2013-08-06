@@ -9,6 +9,7 @@
 #include "ch.h"
 
 #include "adcThread.h"
+#include "common.h"
 
 #define ADC_BUFF_DEPTH 4
 
@@ -21,21 +22,23 @@ static adcsample_t rawSamples[ADC_NUM_CHANNELS * ADC_BUFF_DEPTH];
 /*
  * ADC streaming callback.
  */
-static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n ) {
+static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n )
+{
+	UNUSED(adcp);
+	UNUSED(buffer);
+	UNUSED(n);
 
-  (void)adcp;
-
-  //Average the data and put in CurrentPos
-  int i,j;
-  for (i = 0; i < ADC_NUM_CHANNELS; i++)
-  {
-	  uint32_t sum = 0;
-	  for (j = 0; j < ADC_BUFF_DEPTH; j++)
+	//Average the data and put in CurrentPos
+	int i,j;
+	for (i = 0; i < ADC_NUM_CHANNELS; i++)
+	{
+		uint32_t sum = 0;
+		for (j = 0; j < ADC_BUFF_DEPTH; j++)
 		  sum += rawSamples[j*ADC_NUM_CHANNELS + i];
-	  uint32_t res = sum / ADC_BUFF_DEPTH;
+		uint32_t res = sum / ADC_BUFF_DEPTH;
 
-	  currentPos[i] = (adcsample_t) res;
-  }
+		currentPos[i] = (adcsample_t) res;
+	}
 }
 
 static void adcerrorcallback(ADCDriver *adcp, adcerror_t err) {

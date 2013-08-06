@@ -12,7 +12,7 @@
 
 #include "joystick.h"
 #include "motor.h"
-
+#include "events.h"
 
 /*
  * Application entry point.
