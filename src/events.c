@@ -13,6 +13,7 @@
 #include "packet.h"
 #include "circularBuffer.h"
 #include "usbSerial.h"
+#include "adcThread.h"
 
 #define PACKET_BUFFER_LEN 5
 
@@ -64,12 +65,12 @@ static msg_t serialThread(void *arg)
 /********************************************************************
  * Event Functions
  ********************************************************************/
-void evt_halt(packet_t packet);
-void evt_readCurrent(packet_t packet);
-void evt_readPos(packet_t packet);
-void evt_setMode(packet_t packet);
-void evt_setDuty(packet_t packet);
-void evt_badCommand(packet_t packet);
+void evt_halt(packet_t* packet);
+void evt_readCurrent(packet_t* packet);
+void evt_readPos(packet_t* packet);
+void evt_setMode(packet_t* packet);
+void evt_setDuty(packet_t* packet);
+void evt_badCommand(packet_t* packet);
 
 void evt_sendPacket(packet_t packet);
 
@@ -93,22 +94,22 @@ static msg_t eventThread(void *arg)
 		switch(currentPacket.command)
 		{
 		case CMD_HALT:
-			evt_halt(currentPacket);
+			evt_halt(&currentPacket);
 			break;
 		case CMD_READ_CURRENT:
-			evt_readCurrent(currentPacket);
+			evt_readCurrent(&currentPacket);
 			break;
 		case CMD_READ_POS:
-			evt_readPos(currentPacket);
+			evt_readPos(&currentPacket);
 			break;
 		case CMD_SET_DUTY:
-			evt_setDuty(currentPacket);
+			evt_setDuty(&currentPacket);
 			break;
 		case CMD_SET_MODE:
-			evt_setMode(currentPacket);
+			evt_setMode(&currentPacket);
 			break;
 		default:
-			evt_badCommand(currentPacket);
+			evt_badCommand(&currentPacket);
 			break;
 		}
 
@@ -124,8 +125,6 @@ void evt_init(void)
 	// initialises the temp packet
 	pkt_init(&s_packet);
 
-
-
 	/*
 	* Activates the USB driver and then the USB bus pull-up on D+.
 	* Note, a delay is inserted in order to not have to disconnect the cable
@@ -139,10 +138,10 @@ void evt_init(void)
 	palSetPadMode(GPIOA, 12, PAL_MODE_ALTERNATE(14));
 
 	/*
-		* Initializes a serial-over-USB CDC driver.
-		*/
-		sduObjectInit(&SDU1);
-		sduStart(&SDU1, &serusbcfg);
+	* Initializes a serial-over-USB CDC driver.
+	*/
+	sduObjectInit(&SDU1);
+	sduStart(&SDU1, &serusbcfg);
 
 	//initialise the packet buffer
 	circ_init(&packetBuf,_packetData,sizeof(packet_t), PACKET_BUFFER_LEN);
@@ -160,38 +159,41 @@ void evt_init(void)
 /******************************
  * Event Definitions
  *****************************/
-void evt_halt(packet_t packet)
+void evt_halt(packet_t* packet)
 {
+	UNUSED(packet);
 	int i = 0;
 	//Set all duty cycles to 0% and apply breaks
 	for (i = 0; i < 6; i++)
 	{
-		motor_setSpeed(packet.targetAxis,0);
-		motor_setBrakes(packet.targetAxis, 1);
+		motor_setSpeed(i,0);
+		motor_setBrakes(i, 1);
 	}
 }
 
-void evt_readCurrent(packet_t packet)
+void evt_readCurrent(packet_t* packet)
 {
 	UNUSED(packet);
 }
 
-void evt_readPos(packet_t packet)
+void evt_readPos(packet_t* packet)
 {
-	UNUSED(packet);
+	chSysLock();
+	packet->data = currentPos[packet->targetAxis];
+	chSysUnlock();
 }
 
-void evt_setMode(packet_t packet)
+void evt_setMode(packet_t* packet)
 {
-	motor_setBrakes(packet.targetAxis, packet.data);
+	motor_setBrakes(packet->targetAxis, packet->data);
 }
 
-void evt_setDuty(packet_t packet)
+void evt_setDuty(packet_t* packet)
 {
-	motor_setSpeed(packet.targetAxis,packet.data);
+	motor_setSpeed(packet->targetAxis,packet->data);
 }
 
-void evt_badCommand(packet_t packet)
+void evt_badCommand(packet_t* packet)
 {
 	UNUSED(packet);
 	//Do Nothing

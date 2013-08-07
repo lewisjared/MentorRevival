@@ -69,7 +69,6 @@ include $(CHIBIOS)/os/hal/platforms/STM32F37x/platform.mk
 include $(CHIBIOS)/os/hal/hal.mk
 include $(CHIBIOS)/os/ports/GCC/ARMCMx/STM32F3xx/port.mk
 include $(CHIBIOS)/os/kernel/kernel.mk
-include $(CHIBIOS)/test/test.mk
 
 # List of all the board related files.
 BOARDSRC = board.c
@@ -86,7 +85,6 @@ LDSCRIPT= $(PORTLD)/STM32F372xC.ld
 # setting.
 CSRC = $(PORTSRC) \
        $(KERNSRC) \
-       $(TESTSRC) \
        $(HALSRC) \
        $(PLATFORMSRC) \
        $(BOARDSRC) \
