@@ -12,7 +12,7 @@
 #include "hal.h"
 #include "ch.h"
 
-#define ADC_NUM_CHANNELS 4
+#define ADC_NUM_CHANNELS 6
 
 extern adcsample_t currentPos[ADC_NUM_CHANNELS];
 

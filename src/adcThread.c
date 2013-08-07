@@ -12,7 +12,7 @@
 #include "common.h"
 
 #define ADC_BUFF_DEPTH 4
-
+#define SAMPLE_RATE ADC_SAMPLE_41P5
 
 adcsample_t currentPos[ADC_NUM_CHANNELS];
 //Raw samples from ADC
@@ -51,7 +51,8 @@ static void adcerrorcallback(ADCDriver *adcp, adcerror_t err) {
  * Configuration for ADC
  * AIN1, AIN2, AIN3,AIN4
  */
-static const ADCConversionGroup adcgrpcfg = {
+static const ADCConversionGroup adcgrpcfg =
+{
   TRUE,
   ADC_NUM_CHANNELS,
   adccallback,
@@ -61,23 +62,27 @@ static const ADCConversionGroup adcgrpcfg = {
   0,						/*LTR*/
   0,						/*HTR*/
   {							/*smpr[2]*/
-		  0,
-		  ADC_SMPR2_SMP_AN4(ADC_SAMPLE_239P5) | ADC_SMPR2_SMP_AN5(ADC_SAMPLE_239P5) |
-		  ADC_SMPR2_SMP_AN6(ADC_SAMPLE_239P5),
+		  ADC_SMPR1_SMP_AN11(SAMPLE_RATE) | ADC_SMPR1_SMP_AN12(SAMPLE_RATE) |
+		  ADC_SMPR1_SMP_AN13(SAMPLE_RATE),
+		  ADC_SMPR2_SMP_AN4(SAMPLE_RATE) | ADC_SMPR2_SMP_AN5(SAMPLE_RATE) |
+		  ADC_SMPR2_SMP_AN6(SAMPLE_RATE),
   },
   { /*sqr[3]*/
 		  ADC_SQR1_NUM_CH(ADC_NUM_CHANNELS), //SQR1
 		  0, // SQR2
-		  ADC_SQR3_SQ3_N(ADC_CHANNEL_IN6) |
-		  ADC_SQR3_SQ2_N(ADC_CHANNEL_IN5)   | ADC_SQR3_SQ1_N(ADC_CHANNEL_IN4)
+		  ADC_SQR3_SQ1_N(ADC_CHANNEL_IN4) | ADC_SQR3_SQ2_N(ADC_CHANNEL_IN5) |
+		  ADC_SQR3_SQ3_N(ADC_CHANNEL_IN6) | ADC_SQR3_SQ4_N(ADC_CHANNEL_IN11) |
+		  ADC_SQR3_SQ5_N(ADC_CHANNEL_IN12) | ADC_SQR3_SQ6_N(ADC_CHANNEL_IN13)
   }
  };
 
 
 void ADC_init(void)
 {
-
-	//Set A1,A2,A3,A4 as analog inputs
+	//Set C0,C1,C2 as analog inputs
+	palSetGroupMode(GPIOC, PAL_PORT_BIT(0) | PAL_PORT_BIT(1) | PAL_PORT_BIT(2),
+				0,PAL_MODE_INPUT_ANALOG);
+	//Set A5,A6,A7 as analog inputs
 	palSetGroupMode(GPIOA, PAL_PORT_BIT(5) | PAL_PORT_BIT(6) | PAL_PORT_BIT(7),
 			0,PAL_MODE_INPUT_ANALOG);
 
