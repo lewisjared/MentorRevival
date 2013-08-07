@@ -12,6 +12,7 @@
 #include "motor.h"
 #include "packet.h"
 #include "circularBuffer.h"
+#include "usbSerial.h"
 
 #define PACKET_BUFFER_LEN 5
 
@@ -20,85 +21,32 @@ static circ_t packetBuf;
 static packet_t _packetData[PACKET_BUFFER_LEN];
 static Semaphore packetSem;
 
-/**********************************************************
- * UART interrupts
- *********************************************************/
-
-/*
- * This callback is invoked when a transmission buffer has been completely
- * read by the driver.
- */
-static void txend1(UARTDriver *uartp) {
-
-  (void)uartp;
-}
-
-/*
- * This callback is invoked when a transmission has physically completed.
- */
-static void txend2(UARTDriver *uartp) {
-
-  (void)uartp;
-}
-
-/*
- * This callback is invoked on a receive error, the errors mask is passed
- * as parameter.
- */
-static void rxerr(UARTDriver *uartp, uartflags_t e) {
-
-  (void)uartp;
-  (void)e;
-}
-
-/*
- * This callback is invoked when a character is received but the application
- * was not ready to receive it, the character is passed as parameter.
- */
-static void rxchar(UARTDriver *uartp, uint16_t c)
+static WORKING_AREA(waSerialThread,100);
+static msg_t serialThread(void *arg)
 {
-	UNUSED(uartp);
-	//Append the char to the current packet.
-	pkt_appendByte(&s_packet, c);
-
-	//Check if the packet is full to pass to the application
-	if (pkt_isComplete(&s_packet))
+	UNUSED(arg);
+	while(TRUE)
 	{
-		//Queue up for application
-		circ_write(&packetBuf, &s_packet);
+		//Blocking call to get next char
+		char val = chSequentialStreamGet(&SDU1);
+		//Append the char to the current packet.
+		pkt_appendByte(&s_packet, val);
 
-		//Signal the semaphore that there is more data
-		chSysLockFromIsr();
-		chSemSignalI(&packetSem);
-		chSysUnlockFromIsr();
+		//Check if the packet is full to pass to the application
+		if (pkt_isComplete(&s_packet))
+		{
+			//Queue up for application
+			circ_write(&packetBuf, &s_packet);
 
-		//Clear the current packet
-		pkt_init(&s_packet);
+			//Signal the semaphore that there is more data
+			chSemSignal(&packetSem);
+
+			//Clear the current packet
+			pkt_init(&s_packet);
+		}
 	}
+	return -1;
 }
-
-/*
- * This callback is invoked when a receive buffer has been completely written.
- */
-static void rxend(UARTDriver *uartp) {
-
-  (void)uartp;
-}
-
-/*
- * UART driver configuration structure.
- */
-static UARTConfig uart_cfg_1 = {
-  txend1,
-  txend2,
-  rxend,
-  rxchar,
-  rxerr,
-  38400,
-  0,
-  USART_CR2_LINEN,
-  0
-};
 
 
 /********************************************************************
@@ -156,6 +104,7 @@ static msg_t eventThread(void *arg)
 		//For now just repeat the command back to the host
 		evt_sendPacket(currentPacket);
 	}
+	return -1;
 }
 
 void evt_init(void)
@@ -163,18 +112,30 @@ void evt_init(void)
 	// initialises the temp packet
 	pkt_init(&s_packet);
 
+	/*
+	* Initializes a serial-over-USB CDC driver.
+	*/
+	sduObjectInit(&SDU1);
+	sduStart(&SDU1, &serusbcfg);
+
+	/*
+	* Activates the USB driver and then the USB bus pull-up on D+.
+	* Note, a delay is inserted in order to not have to disconnect the cable
+	* after a reset.
+	*/
+	usbDisconnectBus(serusbcfg.usbp);
+	chThdSleepMilliseconds(1500);
+	usbStart(serusbcfg.usbp, &usbcfg);
+	usbConnectBus(serusbcfg.usbp);
+
 	//initialise the packet buffer
 	circ_init(&packetBuf,_packetData,sizeof(packet_t), PACKET_BUFFER_LEN);
 
-	/*
-	 * Activates the UART driver 1, PA9(TX) and PA10(RX) are routed to USART2.
-	 */
-	uartStart(&UARTD1, &uart_cfg_1);
-	palSetPadMode(GPIOA, 9, PAL_MODE_ALTERNATE(7));
-	palSetPadMode(GPIOA, 10, PAL_MODE_ALTERNATE(7));
-
 	// Create Event Thread. This thread is a basic state machine
 	chThdCreateStatic(waEvtThread, sizeof(waEvtThread), NORMALPRIO, eventThread, NULL);
+
+	//Start reading data of the USB Serial
+	chThdCreateStatic(waSerialThread, sizeof(waSerialThread), NORMALPRIO, serialThread, NULL);
 
 	//Now the state machine operates in its own thread while main thread continues
 }
@@ -230,5 +191,5 @@ void evt_sendPacket(packet_t packet)
 	pkt_encode(&packet, buf);
 
 	//add to UART buffer
-	uartStartSend(&UARTD1, 4, buf);
+	chSequentialStreamWrite(&SDU1, (const uint8_t*)buf, 4);
 }
