@@ -58,21 +58,27 @@ static const ADCConversionGroup adcgrpcfg = {
   adcerrorcallback,
   0,                        /* CR1 */
   ADC_CR2_SWSTART,          /* CR2 */
-  0,
-  ADC_SMPR2_SMP_AN0(ADC_SAMPLE_55P5) | ADC_SMPR2_SMP_AN1(ADC_SAMPLE_55P5) |
-  ADC_SMPR2_SMP_AN2(ADC_SAMPLE_55P5) | ADC_SMPR2_SMP_AN3(ADC_SAMPLE_55P5),                        /* SMPR2 */
-  ADC_SQR1_NUM_CH(ADC_NUM_CHANNELS), //SQR1
-  0, // SQR2
-  ADC_SQR3_SQ4_N(ADC_CHANNEL_IN3)   | ADC_SQR3_SQ3_N(ADC_CHANNEL_IN2) |
-  ADC_SQR3_SQ2_N(ADC_CHANNEL_IN1)   | ADC_SQR3_SQ1_N(ADC_CHANNEL_IN0)
-};
+  0,						/*LTR*/
+  0,						/*HTR*/
+  {							/*smpr[2]*/
+		  0,
+		  ADC_SMPR2_SMP_AN4(ADC_SAMPLE_239P5) | ADC_SMPR2_SMP_AN5(ADC_SAMPLE_239P5) |
+		  ADC_SMPR2_SMP_AN6(ADC_SAMPLE_239P5),
+  },
+  { /*sqr[3]*/
+		  ADC_SQR1_NUM_CH(ADC_NUM_CHANNELS), //SQR1
+		  0, // SQR2
+		  ADC_SQR3_SQ3_N(ADC_CHANNEL_IN6) |
+		  ADC_SQR3_SQ2_N(ADC_CHANNEL_IN5)   | ADC_SQR3_SQ1_N(ADC_CHANNEL_IN4)
+  }
+ };
 
 
 void ADC_init(void)
 {
 
 	//Set A1,A2,A3,A4 as analog inputs
-	palSetGroupMode(GPIOA, PAL_PORT_BIT(0) | PAL_PORT_BIT(1) | PAL_PORT_BIT(2) | PAL_PORT_BIT(3),
+	palSetGroupMode(GPIOA, PAL_PORT_BIT(5) | PAL_PORT_BIT(6) | PAL_PORT_BIT(7),
 			0,PAL_MODE_INPUT_ANALOG);
 
 	//Start the ADC1
