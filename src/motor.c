@@ -72,6 +72,41 @@ static const Motor_struct motors[NUM_MOTOR] =
 		{GPIOD,2},	//Mode1
 		&PWMD3, //PWM Driver
 		2,		//PWM Channel
+	},
+	{ //Motor 2
+		{GPIOB,1},	//Phase
+		{GPIOC,9},	//Enable
+		{GPIOD,8},	//Mode1
+		&PWMD3, //PWM Driver
+		3,		//PWM Channel
+	},
+	{ //Motor 3
+		{GPIOB,2},	//Phase
+		{GPIOC,10},	//Enable
+		{GPIOE,8},	//Mode1
+		&PWMD3, //PWM Driver
+		3,		//PWM Channel
+	},
+	{ //Motor 4
+		{GPIOB,7},	//Phase
+		{GPIOC,11},	//Enable
+		{GPIOE,9},	//Mode1
+		&PWMD3, //PWM Driver
+		3,		//PWM Channel
+	},
+	{ //Motor 5
+		{GPIOB,6},	//Phase
+		{GPIOC,6},	//Enable
+		{GPIOC,4},	//Mode1
+		&PWMD3, //PWM Driver
+		0,		//PWM Channel
+	},
+	{ //Motor 6
+		{GPIOB,5},	//Phase
+		{GPIOC,7},	//Enable
+		{GPIOC,5},	//Mode1
+		&PWMD3, //PWM Driver
+		1,		//PWM Channel
 	}
 };
 
@@ -81,12 +116,12 @@ void motor_init(void)
 	//pwmStart(&PWMD4, &pwmcfg4);
 
 	//Configure PWM pins
-	//palSetPadMode(GPIOD, 12, PAL_MODE_ALTERNATE(2)); //M1
-	//palSetPadMode(GPIOD, 13, PAL_MODE_ALTERNATE(2)); //M2
-	//palSetPadMode(GPIOC, 6, PAL_MODE_ALTERNATE(2)); //M3
-	//palSetPadMode(GPIOC, 7, PAL_MODE_ALTERNATE(2)); //M4
-	palSetPadMode(GPIOC, 8, PAL_MODE_ALTERNATE(2)); //M5
-	//palSetPadMode(GPIOC, 9, PAL_MODE_ALTERNATE(2)); //M6
+	palSetPadMode(GPIOC, 8, PAL_MODE_ALTERNATE(2)); //M1
+	palSetPadMode(GPIOC, 9, PAL_MODE_ALTERNATE(2)); //M2
+	palSetPadMode(GPIOC, 10, PAL_MODE_ALTERNATE(2)); //M3
+	palSetPadMode(GPIOC, 11, PAL_MODE_ALTERNATE(2)); //M4
+	palSetPadMode(GPIOC, 6, PAL_MODE_ALTERNATE(2)); //M5
+	palSetPadMode(GPIOC, 7, PAL_MODE_ALTERNATE(2)); //M6
 
 	int i = 0;
 	for (i = 0; i< NUM_MOTOR; i++)
