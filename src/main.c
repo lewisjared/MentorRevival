@@ -43,11 +43,11 @@ int main(void) {
     // Get the latest joystick Vals
 	joy_getValues(joystickData);
 
-    //Now print the data to the serial driver
+    /*//Now print the data to the serial driver
     for (i = 0; i < NUM_JOYSTICKS; i++)
     {
     	motor_setDir(i, joystickData[i].dir);
     	motor_setSpeed(i, joystickData[i].pos);
-    }
+    }*/
   }
 }

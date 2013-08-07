@@ -25,24 +25,36 @@ static WORKING_AREA(waSerialThread,100);
 static msg_t serialThread(void *arg)
 {
 	UNUSED(arg);
+	bool start = true;
+
 	while(TRUE)
 	{
 		//Blocking call to get next char
 		char val = chSequentialStreamGet(&SDU1);
-		//Append the char to the current packet.
-		pkt_appendByte(&s_packet, val);
 
-		//Check if the packet is full to pass to the application
-		if (pkt_isComplete(&s_packet))
+		if (start)
 		{
-			//Queue up for application
-			circ_write(&packetBuf, &s_packet);
+			if (val != 254)
+			{
+				start = false;
+				pkt_appendByte(&s_packet, val);
+			}
+		} else {
+			//Append the char to the current packet.
+			pkt_appendByte(&s_packet, val);
 
-			//Signal the semaphore that there is more data
-			chSemSignal(&packetSem);
+			//Check if the packet is full to pass to the application
+			if (pkt_isComplete(&s_packet))
+			{
+				//Queue up for application
+				circ_write(&packetBuf, &s_packet);
 
-			//Clear the current packet
-			pkt_init(&s_packet);
+				//Signal the semaphore that there is more data
+				chSemSignal(&packetSem);
+
+				//Clear the current packet
+				pkt_init(&s_packet);
+			}
 		}
 	}
 	return -1;
@@ -112,21 +124,25 @@ void evt_init(void)
 	// initialises the temp packet
 	pkt_init(&s_packet);
 
-	/*
-	* Initializes a serial-over-USB CDC driver.
-	*/
-	sduObjectInit(&SDU1);
-	sduStart(&SDU1, &serusbcfg);
+
 
 	/*
 	* Activates the USB driver and then the USB bus pull-up on D+.
 	* Note, a delay is inserted in order to not have to disconnect the cable
 	* after a reset.
 	*/
-	usbDisconnectBus(serusbcfg.usbp);
+	palSetPadMode(GPIOA, 12, PAL_MODE_OUTPUT_PUSHPULL);
+	palClearPad(GPIOA, 12);
 	chThdSleepMilliseconds(1500);
 	usbStart(serusbcfg.usbp, &usbcfg);
-	usbConnectBus(serusbcfg.usbp);
+	palSetPad(GPIOA, 12);
+	palSetPadMode(GPIOA, 12, PAL_MODE_ALTERNATE(14));
+
+	/*
+		* Initializes a serial-over-USB CDC driver.
+		*/
+		sduObjectInit(&SDU1);
+		sduStart(&SDU1, &serusbcfg);
 
 	//initialise the packet buffer
 	circ_init(&packetBuf,_packetData,sizeof(packet_t), PACKET_BUFFER_LEN);

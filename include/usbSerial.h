@@ -25,8 +25,8 @@
 /*
  * DP resistor control.
  */
-#define usb_lld_connect_bus(usbp) palClearPad(GPIOA, 1 <<11)
-#define usb_lld_disconnect_bus(usbp) palSetPad(GPIOA, 1 << 11)
+#define usb_lld_connect_bus(usbp) palClearPad(GPIOA, 11)
+#define usb_lld_disconnect_bus(usbp) palSetPad(GPIOA, 11)
 
 /*
  * Serial over USB Driver structure.

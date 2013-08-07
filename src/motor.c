@@ -81,19 +81,19 @@ void motor_init(void)
 	//pwmStart(&PWMD4, &pwmcfg4);
 
 	//Configure PWM pins
-	palSetPadMode(GPIOD, 12, PAL_MODE_ALTERNATE(2)); //M1
-	palSetPadMode(GPIOD, 13, PAL_MODE_ALTERNATE(2)); //M2
-	palSetPadMode(GPIOC, 6, PAL_MODE_ALTERNATE(2)); //M3
-	palSetPadMode(GPIOC, 7, PAL_MODE_ALTERNATE(2)); //M4
+	//palSetPadMode(GPIOD, 12, PAL_MODE_ALTERNATE(2)); //M1
+	//palSetPadMode(GPIOD, 13, PAL_MODE_ALTERNATE(2)); //M2
+	//palSetPadMode(GPIOC, 6, PAL_MODE_ALTERNATE(2)); //M3
+	//palSetPadMode(GPIOC, 7, PAL_MODE_ALTERNATE(2)); //M4
 	palSetPadMode(GPIOC, 8, PAL_MODE_ALTERNATE(2)); //M5
-	palSetPadMode(GPIOC, 9, PAL_MODE_ALTERNATE(2)); //M6
+	//palSetPadMode(GPIOC, 9, PAL_MODE_ALTERNATE(2)); //M6
 
 	int i = 0;
 	for (i = 0; i< NUM_MOTOR; i++)
 	{
 		configPinOpenDrain(motors[i].mode1);
 		configPinOpenDrain(motors[i].phase);
-		pwmcnt_t count = PWM_PERCENTAGE_TO_WIDTH(motors[i].pwmDriver, 0);
+		pwmcnt_t count = PWM_PERCENTAGE_TO_WIDTH(motors[i].pwmDriver, 5000);
 		pwmEnableChannel(motors[i].pwmDriver, motors[i].pwmChannel, count);
 		setPin(motors[i].phase, PAL_HIGH);
 	}
