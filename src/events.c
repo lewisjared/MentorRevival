@@ -190,7 +190,9 @@ void evt_setMode(packet_t* packet)
 
 void evt_setDuty(packet_t* packet)
 {
-	motor_setSpeed(packet->targetAxis,packet->data);
+	int16_t speed = packet->data;
+	speed -= 10000;
+	motor_setSpeed(packet->targetAxis,speed);
 }
 
 void evt_badCommand(packet_t* packet)
