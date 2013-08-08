@@ -41,7 +41,7 @@ static PWMConfig pwmcfg3 = {
 * Configuration for PWM channel 4
 * 2 Channels
 */
-static PWMConfig pwmcfg4 = {
+static PWMConfig pwmcfg19 = {
 	PWM_CLOCK_FREQUENCY,
 	PWM_PERIOD,
 	NULL,
@@ -84,15 +84,15 @@ static const Motor_struct motors[NUM_MOTOR] =
 		{GPIOB,2},	//Phase
 		{GPIOC,10},	//Enable
 		{GPIOE,8},	//Mode1
-		&PWMD3, //PWM Driver
-		3,		//PWM Channel
+		&PWMD19, //PWM Driver
+		1,		//PWM Channel
 	},
 	{ //Motor 4
 		{GPIOB,7},	//Phase
 		{GPIOC,11},	//Enable
 		{GPIOE,9},	//Mode1
-		&PWMD3, //PWM Driver
-		3,		//PWM Channel
+		&PWMD19, //PWM Driver
+		0,		//PWM Channel
 	},
 	{ //Motor 5
 		{GPIOB,6},	//Phase
@@ -113,7 +113,7 @@ static const Motor_struct motors[NUM_MOTOR] =
 void motor_init(void)
 {
 	pwmStart(&PWMD3, &pwmcfg3);
-	//pwmStart(&PWMD4, &pwmcfg4);
+	pwmStart(&PWMD19, &pwmcfg19);
 
 	//Configure PWM pins
 	palSetPadMode(GPIOC, 8, PAL_MODE_ALTERNATE(2)); //M1
@@ -128,7 +128,7 @@ void motor_init(void)
 	{
 		configPinOpenDrain(motors[i].mode1);
 		configPinOpenDrain(motors[i].phase);
-		pwmcnt_t count = PWM_PERCENTAGE_TO_WIDTH(motors[i].pwmDriver, 5000);
+		pwmcnt_t count = PWM_PERCENTAGE_TO_WIDTH(motors[i].pwmDriver, 0);
 		pwmEnableChannel(motors[i].pwmDriver, motors[i].pwmChannel, count);
 		setPin(motors[i].phase, PAL_HIGH);
 	}
@@ -136,12 +136,14 @@ void motor_init(void)
 
 
 //Speed control is by appplying a pwm signal to the enable pin
-void motor_setSpeed(int motorNum, uint16_t speed)
+void motor_setSpeed(int motorNum, int16_t speed)
 {
 	if (motorNum < NUM_MOTOR && motorNum >= 0)
 	{
-		pwmcnt_t count = PWM_PERCENTAGE_TO_WIDTH(motors[motorNum].pwmDriver, speed);
+		pwmcnt_t count = PWM_PERCENTAGE_TO_WIDTH(motors[motorNum].pwmDriver, abs(speed));
 		pwmEnableChannel(motors[motorNum].pwmDriver, motors[motorNum].pwmChannel, count);
+
+		motor_setDir(motorNum, speed >= 0);
 	}
 }
 

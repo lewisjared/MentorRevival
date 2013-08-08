@@ -27,11 +27,11 @@ void motor_init(void);
 void motor_setDir(int motorNum, bool direction);
 
 /**
- * Sets the speed of a given motor
+ * Sets the speed and direction of a given motor
  * \param motorNum Motor Number to alter. In range [0:NUM_MOTORS-1]
- * \param speed Sets the speed of the motor. [0..10000] maps to 0 to 100%
+ * \param speed Sets the speed of the motor. [-10000..10000] maps to 0 to 100%
  */
-void motor_setSpeed(int motorNum, uint16_t speed);
+void motor_setSpeed(int motorNum, int16_t speed);
 
 /**
  * Applies the brakes on a given motor.
