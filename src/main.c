@@ -33,21 +33,8 @@ int main(void) {
   motor_init();
   evt_init();
 
-  joypos_t joystickData[NUM_JOYSTICKS];
-  int i;
-
   //Event loop simply updates the current positions
   while (TRUE) {
     chThdSleepMilliseconds(200);
-
-    // Get the latest joystick Vals
-	joy_getValues(joystickData);
-
-    /*//Now print the data to the serial driver
-    for (i = 0; i < NUM_JOYSTICKS; i++)
-    {
-    	motor_setDir(i, joystickData[i].dir);
-    	motor_setSpeed(i, joystickData[i].pos);
-    }*/
   }
 }

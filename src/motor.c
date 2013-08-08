@@ -67,14 +67,14 @@ typedef struct {
 static const Motor_struct motors[NUM_MOTOR] =
 {
 	{ //Motor 1
-		{GPIOB,0},	//Phase
+		{GPIOB,7},	//Phase
 		{GPIOC,8},	//Enable
 		{GPIOD,2},	//Mode1
 		&PWMD3, //PWM Driver
 		2,		//PWM Channel
 	},
 	{ //Motor 2
-		{GPIOB,1},	//Phase
+		{GPIOB,6},	//Phase
 		{GPIOC,9},	//Enable
 		{GPIOD,8},	//Mode1
 		&PWMD3, //PWM Driver
@@ -88,21 +88,21 @@ static const Motor_struct motors[NUM_MOTOR] =
 		1,		//PWM Channel
 	},
 	{ //Motor 4
-		{GPIOB,7},	//Phase
+		{GPIOB,5},	//Phase
 		{GPIOC,11},	//Enable
 		{GPIOE,9},	//Mode1
 		&PWMD19, //PWM Driver
 		0,		//PWM Channel
 	},
 	{ //Motor 5
-		{GPIOB,6},	//Phase
+		{GPIOB,1},	//Phase
 		{GPIOC,6},	//Enable
 		{GPIOC,4},	//Mode1
 		&PWMD3, //PWM Driver
 		0,		//PWM Channel
 	},
 	{ //Motor 6
-		{GPIOB,5},	//Phase
+		{GPIOB,0},	//Phase
 		{GPIOC,7},	//Enable
 		{GPIOC,5},	//Mode1
 		&PWMD3, //PWM Driver
@@ -123,11 +123,19 @@ void motor_init(void)
 	palSetPadMode(GPIOC, 6, PAL_MODE_ALTERNATE(2)); //M5
 	palSetPadMode(GPIOC, 7, PAL_MODE_ALTERNATE(2)); //M6
 
+	palSetPadMode(GPIOB, 7, PAL_MODE_OUTPUT_PUSHPULL);
+	palSetPadMode(GPIOD, 2, PAL_MODE_OUTPUT_PUSHPULL);
+	palSetPadMode(GPIOB, 1, PAL_MODE_OUTPUT_OPENDRAIN);
+	palSetPadMode(GPIOB, 2, PAL_MODE_OUTPUT_OPENDRAIN);
+	palSetPadMode(GPIOB, 4, PAL_MODE_OUTPUT_OPENDRAIN);
+	palSetPadMode(GPIOB, 5, PAL_MODE_OUTPUT_OPENDRAIN);
+	palSetPadMode(GPIOB, 6, PAL_MODE_OUTPUT_OPENDRAIN);
+
 	int i = 0;
 	for (i = 0; i< NUM_MOTOR; i++)
 	{
 		configPinOpenDrain(motors[i].mode1);
-		configPinOpenDrain(motors[i].phase);
+		//configPinOpenDrain(motors[i].phase);
 		pwmcnt_t count = PWM_PERCENTAGE_TO_WIDTH(motors[i].pwmDriver, 0);
 		pwmEnableChannel(motors[i].pwmDriver, motors[i].pwmChannel, count);
 		setPin(motors[i].phase, PAL_HIGH);
